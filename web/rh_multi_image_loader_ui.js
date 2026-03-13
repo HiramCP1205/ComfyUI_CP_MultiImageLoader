@@ -209,10 +209,15 @@ app.registerExtension({
       jsonWidget.computeSize = () => [0, -4];
 
       let imageList = [];
-      try {
-        const parsed = JSON.parse(jsonWidget.value || "[]");
-        if (Array.isArray(parsed)) imageList = parsed.map((v) => String(v));
-      } catch (_) {}
+      const loadImageListFromWidget = () => {
+        try {
+          const parsed = JSON.parse(jsonWidget.value || "[]");
+          imageList = Array.isArray(parsed) ? parsed.map((v) => String(v)) : [];
+        } catch (_) {
+          imageList = [];
+        }
+      };
+      loadImageListFromWidget();
 
       const wrap = document.createElement("div");
       wrap.style.display = "flex";
@@ -292,6 +297,13 @@ app.registerExtension({
         }
         app.graph.setDirtyCanvas(true, true);
       };
+
+      const refreshFromWidget = () => {
+        loadImageListFromWidget();
+        render();
+        sync();
+      };
+      this.__cpRefreshFromWidget = refreshFromWidget;
 
       this.__cpApplyLayout = () => {
         if (!Array.isArray(this.size) || this.size.length < 2) return;
@@ -439,6 +451,15 @@ app.registerExtension({
       render();
       sync();
 
+      return result;
+    };
+
+    const onConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onConfigure = function (info) {
+      const result = onConfigure ? onConfigure.call(this, info) : undefined;
+      if (typeof this.__cpRefreshFromWidget === "function") {
+        this.__cpRefreshFromWidget();
+      }
       return result;
     };
   },
