@@ -1,2 +1,0 @@
-# ComfyUI_CP_MultiImageLoader
-可多选图片进行批量加载
